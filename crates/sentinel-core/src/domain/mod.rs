@@ -1,8 +1,10 @@
 //! Core pure domain models and calculations.
 
+pub mod cold_storage;
 pub mod compare;
 pub mod entry;
 pub mod risk;
+pub mod scenario;
 pub mod ttl;
 
 pub use compare::{
@@ -12,6 +14,10 @@ pub use compare::{
 pub use entry::{Durability, EntryType, StorageEntry};
 pub use risk::{
     evaluate_risk, RiskLevel, ThresholdConfig, DEFAULT_CRITICAL_LEDGERS, DEFAULT_WARNING_LEDGERS,
+};
+pub use scenario::{
+    evaluate_protocol_scenario, NetworkRentParameters, ProtocolScenarioReport, ScenarioEntry,
+    ScenarioEntryImpact, ScenarioError,
 };
 pub use ttl::{
     calculate_remaining_ledgers, estimate_horizon_days, estimate_horizon_days_with_velocity,

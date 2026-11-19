@@ -20,6 +20,8 @@ pub enum Commands {
     Scan(ScanArgs),
     /// Benchmark Soroban RPC endpoint performance (latency, throughput, percentiles)
     Benchmark(BenchmarkArgs),
+    /// Scan contracts once from a TOML manifest
+    Check(CheckArgs),
 }
 
 /// Command-line arguments for the `sentinel scan` command.
@@ -102,6 +104,21 @@ pub struct BenchmarkArgs {
     pub format: String,
 }
 
+/// Command-line arguments for a one-shot manifest check.
+#[derive(Args, Debug)]
+#[command(
+    after_help = "Exit codes: 0 OK, 1 warning, 2 critical or archived, 10 invalid input, 11 RPC failure. Any RPC failure takes precedence over risk results."
+)]
+pub struct CheckArgs {
+    /// Path to the fleet manifest
+    #[arg(long, default_value = "sentinel.toml", value_name = "PATH")]
+    pub config: std::path::PathBuf,
+
+    /// Report format
+    #[arg(long, default_value = "text", value_parser = ["text", "json"])]
+    pub format: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -132,10 +149,7 @@ mod tests {
                 assert!(scan.baseline.is_none());
                 assert!(!scan.fail_on_regression);
             }
-            Commands::Benchmark(bench) => {
-                assert!(bench.rpc_url.contains("https://"));
-                assert!(bench.format == "text" || bench.format == "json");
-            }
+            _ => panic!("expected scan command"),
         }
     }
 
@@ -196,10 +210,7 @@ mod tests {
                 assert_eq!(scan.baseline.as_deref(), Some("baseline.json"));
                 assert!(scan.fail_on_regression);
             }
-            Commands::Benchmark(bench) => {
-                assert!(bench.rpc_url.contains("https://"));
-                assert!(bench.format == "text" || bench.format == "json");
-            }
+            _ => panic!("expected scan command"),
         }
     }
 }

@@ -24,6 +24,7 @@ serde_json.workspace = true
 comfy-table.workspace = true
 thiserror.workspace = true
 hdrhistogram = "7.5"
+toml = "0.8"
 
 [dev-dependencies]
 assert_cmd.workspace = true
