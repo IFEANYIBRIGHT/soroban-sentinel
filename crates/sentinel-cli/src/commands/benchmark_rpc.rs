@@ -7,13 +7,9 @@ use serde::Serialize;
 use sentinel_core::adapters::{
     derive_contract_instance_key, validate_rpc_url, MAX_KEYS_PER_REQUEST,
 };
-use sentinel_core::error::SentinelError;
-use sentinel_core::ports::reader::RawLedgerEntry;
-use sentinel_core::usecases::ScanContractUseCase;
 use sentinel_core::LedgerReader;
 
 use crate::args::BenchmarkArgs;
-use crate::formatters::render_text;
 
 /// Exit code: Benchmark completed successfully.
 pub const EXIT_BENCHMARK_OK: i32 = 0;
@@ -21,9 +17,7 @@ pub const EXIT_BENCHMARK_OK: i32 = 0;
 pub const EXIT_BENCHMARK_ERROR: i32 = 11;
 
 /// Default concurrency for benchmark requests.
-const DEFAULT_CONCURRENCY: usize = 1;
 /// Default benchmark duration in seconds.
-const DEFAULT_DURATION_SECS: u64 = 30;
 
 // === Structs ===
 
@@ -107,7 +101,7 @@ pub async fn run_benchmark(args: BenchmarkArgs) -> i32 {
         &mut rpc_client,
         concurrency,
         duration_secs,
-        &[instance_key_xdr.clone()],
+        std::slice::from_ref(&instance_key_xdr),
     )
     .await;
 
@@ -130,8 +124,8 @@ pub async fn run_benchmark(args: BenchmarkArgs) -> i32 {
     let all_latencies: Vec<f64> = baseline_result
         .latencies
         .into_iter()
-        .chain(single_key_result.latencies.into_iter())
-        .chain(batch_result.latencies.into_iter())
+        .chain(single_key_result.latencies)
+        .chain(batch_result.latencies)
         .collect();
 
     let all_percentiles = calculate_percentiles(&all_latencies);
