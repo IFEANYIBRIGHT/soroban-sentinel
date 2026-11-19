@@ -18,6 +18,8 @@ pub struct Cli {
 pub enum Commands {
     /// Scan a contract and inspect storage entry TTL status and expiry risk
     Scan(ScanArgs),
+    /// Benchmark Soroban RPC endpoint performance (latency, throughput, percentiles)
+    Benchmark(BenchmarkArgs),
 }
 
 /// Command-line arguments for the `sentinel scan` command.
@@ -80,6 +82,26 @@ pub struct ScanArgs {
     pub fail_on_regression: bool,
 }
 
+/// Command-line arguments for the `sentinel benchmark-rpc` command.
+#[derive(Args, Debug, Clone)]
+pub struct BenchmarkArgs {
+    /// Required RPC endpoint URL (e.g. https://soroban-testnet.stellar.org)
+    #[arg(value_name = "URL")]
+    pub rpc_url: String,
+
+    /// Number of concurrent requests to issue during benchmark (default: 1)
+    #[arg(long = "concurrency", default_value = "1", value_name = "N")]
+    pub concurrency: usize,
+
+    /// Benchmark duration in seconds (default: 30s)
+    #[arg(long = "duration-secs", default_value = "30", value_name = "SECS")]
+    pub duration_secs: u64,
+
+    /// Output format for benchmark results: "text" (human-readable table) or "json" (machine-readable)
+    #[arg(long = "format", default_value = "text", value_name = "FORMAT")]
+    pub format: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -109,6 +131,10 @@ mod tests {
                 assert!(scan.ledger_seconds.is_none());
                 assert!(scan.baseline.is_none());
                 assert!(!scan.fail_on_regression);
+            }
+            Commands::Benchmark(bench) => {
+                assert!(bench.rpc_url.contains("https://"));
+                assert!(bench.format == "text" || bench.format == "json");
             }
         }
     }
@@ -169,6 +195,10 @@ mod tests {
                 assert_eq!(scan.ledger_seconds, Some(5.5));
                 assert_eq!(scan.baseline.as_deref(), Some("baseline.json"));
                 assert!(scan.fail_on_regression);
+            }
+            Commands::Benchmark(bench) => {
+                assert!(bench.rpc_url.contains("https://"));
+                assert!(bench.format == "text" || bench.format == "json");
             }
         }
     }
