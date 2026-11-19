@@ -25,18 +25,18 @@ async fn test_cli_benchmark_rpc_help_flags_exit_0() {
     // Subcommand benchmark --help
     let mut cmd = Command::cargo_bin("sentinel").unwrap();
     cmd.args(["benchmark", "--help"]);
-    cmd.assert()
-        .code(0)
-        .stdout(predicate::str::contains("Benchmark Soroban RPC endpoint performance"));
+    cmd.assert().code(0).stdout(predicate::str::contains(
+        "Benchmark Soroban RPC endpoint performance",
+    ));
 }
 
 #[tokio::test]
 async fn test_cli_benchmark_rpc_missing_rpc_url_exit_10() {
     let mut cmd = Command::cargo_bin("sentinel").unwrap();
     cmd.args(["benchmark"]); // Missing URL required argument
-    cmd.assert()
-        .code(10)
-        .stderr(predicate::str::contains("the following required arguments were not provided"));
+    cmd.assert().code(10).stderr(predicate::str::contains(
+        "the following required arguments were not provided",
+    ));
 }
 
 #[tokio::test]
@@ -96,7 +96,9 @@ async fn test_cli_benchmark_rpc_json_format_outputs_valid_schema() {
     assert!(parsed.get("total_requests").is_some());
     assert!(parsed.get("requests_per_second").is_some());
     assert!(parsed.get("percentiles").is_some());
-    let percentiles = parsed["percentiles"].as_object().expect("percentiles must be object");
+    let percentiles = parsed["percentiles"]
+        .as_object()
+        .expect("percentiles must be object");
     assert!(percentiles.get("p50").is_some());
     assert!(percentiles.get("p95").is_some());
     assert!(percentiles.get("p99").is_some());
@@ -132,9 +134,9 @@ async fn test_cli_benchmark_rpc_with_mock_rpc_server() {
         "text",
     ]);
 
-    cmd.assert()
-        .code(0)
-        .stderr(predicate::str::contains("Soroban Sentinel RPC Benchmark Report"));
+    cmd.assert().code(0).stderr(predicate::str::contains(
+        "Soroban Sentinel RPC Benchmark Report",
+    ));
 }
 
 #[tokio::test]
@@ -191,7 +193,9 @@ async fn test_cli_benchmark_rpc_measures_multiple_methods() {
     assert!(method.contains("getLatestLedger") || method.contains("getLedgerEntries"));
     assert!(parsed.get("total_requests").is_some());
     assert!(parsed.get("requests_per_second").is_some());
-    let percentiles = parsed["percentiles"].as_object().expect("percentiles must be object");
+    let percentiles = parsed["percentiles"]
+        .as_object()
+        .expect("percentiles must be object");
     assert!(percentiles.get("p50").is_some());
     assert!(percentiles.get("p95").is_some());
     assert!(percentiles.get("p99").is_some());

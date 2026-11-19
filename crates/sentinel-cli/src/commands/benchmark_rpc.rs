@@ -5,12 +5,12 @@ use std::time::{Duration, Instant};
 use serde::Serialize;
 
 use sentinel_core::adapters::{
-    validate_rpc_url, derive_contract_instance_key, MAX_KEYS_PER_REQUEST,
+    derive_contract_instance_key, validate_rpc_url, MAX_KEYS_PER_REQUEST,
 };
 use sentinel_core::error::SentinelError;
 use sentinel_core::ports::reader::RawLedgerEntry;
-use sentinel_core::LedgerReader;
 use sentinel_core::usecases::ScanContractUseCase;
+use sentinel_core::LedgerReader;
 
 use crate::args::BenchmarkArgs;
 use crate::formatters::render_text;
@@ -93,20 +93,15 @@ pub async fn run_benchmark(args: BenchmarkArgs) -> i32 {
     // === Benchmark 1: getLatestLedger (RPC baseline) ===
     eprintln!("\n=== Benchmarking getLatestLedger (RPC baseline) ===");
 
-    let baseline_result = benchmark_rpc_requests(
-        &mut rpc_client,
-        concurrency,
-        duration_secs,
-    )
-    .await;
+    let baseline_result = benchmark_rpc_requests(&mut rpc_client, concurrency, duration_secs).await;
 
     // === Benchmark 2: getLedgerEntries single-key (1 key per request) ===
     eprintln!("\n=== Benchmarking getLedgerEntries single-key (1 key) ===");
 
     // Derive a deterministic contract instance key for single-key benchmark
     let contract_bytes = [0xCDu8; 32];
-    let instance_key_xdr = derive_contract_instance_key(&contract_bytes)
-        .unwrap_or_else(|_| "ABC".to_string());
+    let instance_key_xdr =
+        derive_contract_instance_key(&contract_bytes).unwrap_or_else(|_| "ABC".to_string());
 
     let single_key_result = benchmark_ledger_entries_requests(
         &mut rpc_client,
@@ -126,13 +121,9 @@ pub async fn run_benchmark(args: BenchmarkArgs) -> i32 {
         batch_keys.push(key);
     }
 
-    let batch_result = benchmark_ledger_entries_requests(
-        &mut rpc_client,
-        concurrency,
-        duration_secs,
-        &batch_keys,
-    )
-    .await;
+    let batch_result =
+        benchmark_ledger_entries_requests(&mut rpc_client, concurrency, duration_secs, &batch_keys)
+            .await;
 
     // === Combine results and output ===
     // Collect all latencies from all three methods
@@ -165,21 +156,19 @@ pub async fn run_benchmark(args: BenchmarkArgs) -> i32 {
 
     // Print human-readable report to stderr (for both text and JSON CLI output)
     print_benchmark_report(&combined_results);
-eprintln!();
+    eprintln!();
 
     // Print machine-readable JSON to stdout when requested
     if args.format == "json" {
-        let json_str = serde_json::to_string_pretty(&combined_results).unwrap_or_else(|_| {
-            r#"{"error":"Failed to serialize benchmark results"}"#
-                .to_string()
-        });
+        let json_str = serde_json::to_string_pretty(&combined_results)
+            .unwrap_or_else(|_| r#"{"error":"Failed to serialize benchmark results"}"#.to_string());
         println!("{}", json_str);
     } else {
         // Text format: empty line on stdout (for CLI compatibility with previous behavior)
         println!();
     }
 
-EXIT_BENCHMARK_OK
+    EXIT_BENCHMARK_OK
 }
 
 // === Internal Functions ===
@@ -222,7 +211,11 @@ async fn benchmark_rpc_requests(
 
     let total = all_latencies.len();
     let elapsed = start.elapsed().as_secs_f64();
-    let rps = if elapsed > 0.0 { total as f64 / elapsed } else { 0.0 };
+    let rps = if elapsed > 0.0 {
+        total as f64 / elapsed
+    } else {
+        0.0
+    };
 
     BenchmarkSubResult {
         total,
@@ -295,7 +288,11 @@ async fn benchmark_ledger_entries_requests(
 
     let total = all_latencies.len();
     let elapsed = start.elapsed().as_secs_f64();
-    let rps = if elapsed > 0.0 { total as f64 / elapsed } else { 0.0 };
+    let rps = if elapsed > 0.0 {
+        total as f64 / elapsed
+    } else {
+        0.0
+    };
 
     BenchmarkSubResult {
         total,
@@ -308,7 +305,11 @@ async fn benchmark_ledger_entries_requests(
 fn calculate_percentiles(latencies: &[f64]) -> Percentiles {
     let n = latencies.len();
     if n == 0 {
-        return Percentiles { p50: 0.0, p95: 0.0, p99: 0.0 };
+        return Percentiles {
+            p50: 0.0,
+            p95: 0.0,
+            p99: 0.0,
+        };
     }
 
     let mut sorted = latencies.to_vec();
@@ -352,9 +353,7 @@ fn print_benchmark_report(results: &BenchmarkResults) {
     let percentiles = &results.percentiles;
     let rps = results.requests_per_second;
 
-    eprintln!(
-        "Soroban Sentinel RPC Benchmark Report",
-    );
+    eprintln!("Soroban Sentinel RPC Benchmark Report",);
     eprintln!("=======================================");
     eprintln!("RPC URL: {}", results.rpc_url);
     eprintln!("Network: {}", results.network);
@@ -406,14 +405,10 @@ impl BenchmarkArgs {
                 "--concurrency" => {
                     i += 1;
                     if i < args.len() {
-                        concurrency = args[i]
-                            .parse::<usize>()
-                            .unwrap_or_else(|_| {
-                                eprintln!(
-                                    "Error: --concurrency must be a valid positive integer"
-                                );
-                                std::process::exit(EXIT_BENCHMARK_ERROR);
-                            });
+                        concurrency = args[i].parse::<usize>().unwrap_or_else(|_| {
+                            eprintln!("Error: --concurrency must be a valid positive integer");
+                            std::process::exit(EXIT_BENCHMARK_ERROR);
+                        });
                     } else {
                         eprintln!("Error: --concurrency requires a value");
                         std::process::exit(EXIT_BENCHMARK_ERROR);
@@ -422,14 +417,10 @@ impl BenchmarkArgs {
                 "--duration-secs" => {
                     i += 1;
                     if i < args.len() {
-                        duration_secs = args[i]
-                            .parse::<u64>()
-                            .unwrap_or_else(|_| {
-                                eprintln!(
-                                    "Error: --duration-secs must be a valid positive integer"
-                                );
-                                std::process::exit(EXIT_BENCHMARK_ERROR);
-                            });
+                        duration_secs = args[i].parse::<u64>().unwrap_or_else(|_| {
+                            eprintln!("Error: --duration-secs must be a valid positive integer");
+                            std::process::exit(EXIT_BENCHMARK_ERROR);
+                        });
                     } else {
                         eprintln!("Error: --duration-secs requires a value");
                         std::process::exit(EXIT_BENCHMARK_ERROR);
@@ -449,10 +440,7 @@ impl BenchmarkArgs {
                     }
                 }
                 _ => {
-                    eprintln!(
-                        "Error: unrecognized argument: {}",
-                        arg
-                    );
+                    eprintln!("Error: unrecognized argument: {}", arg);
                     std::process::exit(EXIT_BENCHMARK_ERROR);
                 }
             }
@@ -480,10 +468,15 @@ mod tests {
     #[test]
     fn test_benchmark_args_defaults() {
         let args = BenchmarkArgs::parse_from(
-            &["sentinel", "benchmark-rpc", "--rpc-url", "https://example.com"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>(),
+            &[
+                "sentinel",
+                "benchmark-rpc",
+                "--rpc-url",
+                "https://example.com",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>(),
         );
         assert_eq!(args.rpc_url, "https://example.com");
         assert_eq!(args.concurrency, DEFAULT_CONCURRENCY);
@@ -494,10 +487,21 @@ mod tests {
     #[test]
     fn test_benchmark_args_custom_flags() {
         let args = BenchmarkArgs::parse_from(
-            &["sentinel", "benchmark-rpc", "--rpc-url", "https://example.com", "--concurrency", "10", "--duration-secs", "60", "--format", "json"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>(),
+            &[
+                "sentinel",
+                "benchmark-rpc",
+                "--rpc-url",
+                "https://example.com",
+                "--concurrency",
+                "10",
+                "--duration-secs",
+                "60",
+                "--format",
+                "json",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>(),
         );
         assert_eq!(args.rpc_url, "https://example.com");
         assert_eq!(args.concurrency, 10);
@@ -508,7 +512,10 @@ mod tests {
     #[test]
     fn test_benchmark_args_missing_rpc_url() {
         let args = BenchmarkArgs::parse_from(
-            &["sentinel", "benchmark-rpc"].iter().map(|s| s.to_string()).collect::<Vec<String>>(),
+            &["sentinel", "benchmark-rpc"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>(),
         );
         assert!(args.rpc_url.is_empty());
     }
