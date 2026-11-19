@@ -18,6 +18,12 @@ pub struct Cli {
 pub enum Commands {
     /// Scan a contract and inspect storage entry TTL status and expiry risk
     Scan(ScanArgs),
+
+    /// Lint a manifest file and export JSON Schema for IDE autocompletion
+    LintManifest(LintManifestArgs),
+
+    /// Export JSON Schema for IDE autocompletion (VS Code / IntelliJ)
+    Schema(SchemaArgs),
 }
 
 /// Command-line arguments for the `sentinel scan` command.
@@ -80,6 +86,22 @@ pub struct ScanArgs {
     pub fail_on_regression: bool,
 }
 
+/// Command-line arguments for the `sentinel lint-manifest` command.
+#[derive(Args, Debug, Clone)]
+pub struct LintManifestArgs {
+    /// Path to the manifest JSON file to validate and generate schema from
+    #[arg(long = "manifest", value_name = "PATH")]
+    pub manifest: String,
+}
+
+/// Command-line arguments for the `sentinel schema` command.
+#[derive(Args, Debug, Clone)]
+pub struct SchemaArgs {
+    /// Path to the manifest JSON file to generate JSON Schema from
+    #[arg(long = "manifest", value_name = "PATH")]
+    pub manifest: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -110,6 +132,7 @@ mod tests {
                 assert!(scan.baseline.is_none());
                 assert!(!scan.fail_on_regression);
             }
+            Commands::LintManifest(_) | Commands::Schema(_) => {}
         }
     }
 
@@ -170,6 +193,7 @@ mod tests {
                 assert_eq!(scan.baseline.as_deref(), Some("baseline.json"));
                 assert!(scan.fail_on_regression);
             }
+            Commands::LintManifest(_) | Commands::Schema(_) => {}
         }
     }
 }
