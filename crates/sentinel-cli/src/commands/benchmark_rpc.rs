@@ -16,8 +16,6 @@ pub const EXIT_BENCHMARK_OK: i32 = 0;
 /// Exit code: Invalid arguments or RPC failure.
 pub const EXIT_BENCHMARK_ERROR: i32 = 11;
 
-/// Default concurrency for benchmark requests.
-/// Default benchmark duration in seconds.
 
 // === Structs ===
 

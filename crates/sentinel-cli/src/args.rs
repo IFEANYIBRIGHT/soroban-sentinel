@@ -108,9 +108,6 @@ pub struct BenchmarkArgs {
     pub format: String,
 }
 
-    /// Output format for benchmark results: "text" (human-readable table) or "json" (machine-readable)
-    #[arg(long = "format", default_value = "text", value_name = "FORMAT")]
-    pub format: String,
 /// Command-line arguments for the `sentinel bundle` command.
 #[derive(Args, Debug, Clone)]
 pub struct BundleArgs {
