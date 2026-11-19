@@ -217,6 +217,42 @@ sentinel scan CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC \
   --ledger-seconds 5.8
 ```
 
+### Bundling TTL Extensions
+Create unsigned `ExtendFootprintTTL` transaction envelopes for multiple contracts.
+Each transaction contains a deduplicated read-only footprint capped at 40 entries,
+is simulated against Soroban RPC, and reports its fee plus the combined fee:
+
+```bash
+sentinel bundle \
+  --contract CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC \
+  --contract <ANOTHER_CONTRACT_ID> \
+  --key ADMIN \
+  --key-xdr <BASE64_SCVAL_XDR> \
+  --source-account <SOURCE_ACCOUNT_G...> \
+  --extend-by 100000 \
+  --network testnet
+```
+
+The source account must exist on the selected network. `--extend-by` is required;
+`--base-fee` defaults to 100 stroops per transaction and can be overridden.
+Repeated `--key` and `--key-xdr` values are applied to each command-line contract.
+Alternatively, `--manifest contracts.json` accepts JSON in this form:
+
+```json
+{
+  "contracts": [
+    {
+      "contract_id": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      "keys": ["ADMIN"],
+      "key_xdr": ["<BASE64_SCVAL_XDR>"]
+    }
+  ]
+}
+```
+
+Bundling does not sign or submit transactions. Review and sign the returned XDR
+with a separate trusted wallet before submission.
+
 *Actual Terminal Output:*
 ```text
 Contract: CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC | Network: testnet | Latest Ledger: 5,303,220 (Velocity: 5.0s/ledger)
@@ -308,4 +344,3 @@ Please read our [Contribution Plan](docs/OPEN_SOURCE_CONTRIBUTION_PLAN.md) and r
 ## 8. License
 
 `soroban-sentinel` is licensed under the [MIT License](LICENSE).
-

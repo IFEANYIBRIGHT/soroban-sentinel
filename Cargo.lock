@@ -1335,6 +1335,7 @@ dependencies = [
  "comfy-table",
  "hdrhistogram",
  "predicates",
+ "reqwest",
  "sentinel-core",
  "serde",
  "serde_json",

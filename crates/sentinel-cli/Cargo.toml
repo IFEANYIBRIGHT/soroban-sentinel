@@ -24,6 +24,9 @@ serde_json.workspace = true
 comfy-table.workspace = true
 thiserror.workspace = true
 hdrhistogram = "7.5"
+reqwest.workspace = true
+stellar-xdr.workspace = true
+stellar-strkey.workspace = true
 toml = "0.8"
 
 [dev-dependencies]
