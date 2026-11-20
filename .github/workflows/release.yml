@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: none
+
+jobs:
+  build:
+    name: Build Release Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            format: tar.gz
+          - target: aarch64-unknown-linux-gnu
+            format: tar.gz
+          - target: x86_64-apple-darwin
+            format: tar.gz
+          - target: aarch64-apple-darwin
+            format: tar.gz
+          - target: x86_64-pc-windows-msvc
+            format: zip
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --release --target=${{ matrix.target }}
+
+      - name: Package artifact
+        run: |
+          if [ "${{ matrix.target }}" = "x86_64-pc-windows-msvc" ]; then
+            rm -f sentinel.zip
+            zip sentinel-${{ matrix.target }}.zip "target/release/sentinel.exe"
+          else
+            rm -f sentinel-${{ matrix.target }}.tar.gz
+            tar czf sentinel-${{ matrix.target }}.tar.gz -C target/release/sentinel sentinel
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-${{ matrix.target }}
+          path: sentinel-${{ matrix.target }}.${{ matrix.format }}
+
+  release:
+    name: Create GitHub Release and Attach Artifacts
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          pattern: sentinel-*
+
+      - name: Generate SHA256SUMS
+        run: |
+          cd release-assets
+          sha256sum * > SHA256SUMS
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Soroban Sentinel v${{ github.ref_name }}"
+          files: |
+            release-assets/SHA256SUMS
+            release-assets/*.tar.gz
+            release-assets/*.zip
+          generate_release_notes: false
