@@ -16,6 +16,11 @@ pub const EXIT_BENCHMARK_OK: i32 = 0;
 /// Exit code: Invalid arguments or RPC failure.
 pub const EXIT_BENCHMARK_ERROR: i32 = 11;
 
+/// Default number of concurrent RPC requests.
+pub const DEFAULT_CONCURRENCY: usize = 1;
+/// Default benchmark duration in seconds.
+pub const DEFAULT_DURATION_SECS: u64 = 30;
+
 // === Structs ===
 
 /// JSON-serializable benchmark results.
@@ -334,6 +339,7 @@ struct BenchmarkSubResult {
     /// Collected latency measurements in milliseconds.
     latencies: Vec<f64>,
     /// Calculated requests per second.
+    #[allow(dead_code)]
     rps: f64,
 }
 
@@ -371,6 +377,7 @@ fn print_benchmark_report(results: &BenchmarkResults) {
 
 // === CLI Argument Parsing (for standalone/test use) ===
 
+#[cfg(test)]
 impl BenchmarkArgs {
     /// Parses CLI arguments from the program's argv (skipping the program name).
     fn parse_from(args: &[String]) -> Self {
