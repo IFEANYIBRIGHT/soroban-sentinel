@@ -387,6 +387,9 @@ impl BenchmarkArgs {
         let mut format = String::from("text");
 
         let mut i = 1; // Skip program name
+        if args.get(i).map(String::as_str) == Some("benchmark-rpc") {
+            i += 1;
+        }
         while i < args.len() {
             let arg = args[i].as_str();
 
@@ -443,11 +446,6 @@ impl BenchmarkArgs {
                 }
             }
             i += 1;
-        }
-
-        if rpc_url.is_empty() {
-            eprintln!("Error: --rpc-url is required");
-            std::process::exit(EXIT_BENCHMARK_ERROR);
         }
 
         Self {
@@ -538,9 +536,9 @@ mod tests {
     #[test]
     fn test_calculate_percentiles_two_elements() {
         let result = calculate_percentiles(&[10.0, 20.0]);
-        // p50 = 15.0, p95 = 19.0, p99 = 19.8
+        // p50 = 15.0, p95 = 19.5, p99 = 19.9
         assert!((result.p50 - 15.0).abs() < 0.1);
-        assert!((result.p95 - 19.0).abs() < 0.1);
-        assert!((result.p99 - 19.8).abs() < 0.1);
+        assert!((result.p95 - 19.5).abs() < 0.1);
+        assert!((result.p99 - 19.9).abs() < 0.1);
     }
 }

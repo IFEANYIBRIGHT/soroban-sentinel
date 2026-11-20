@@ -1,10 +1,7 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
-use serde_json::Value;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
-
-use std::fs;
 
 #[tokio::test]
 async fn test_cli_benchmark_rpc_help_flags_exit_0() {
