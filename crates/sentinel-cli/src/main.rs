@@ -6,7 +6,9 @@ use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::{fmt, EnvFilter};
 
 use sentinel_cli::args::{Cli, Commands};
-use sentinel_cli::commands::{run_bundle, run_check, run_cost_matrix, run_scan, EXIT_INVALID_ARGS};
+use sentinel_cli::commands::{
+    run_bundle, run_check, run_cost_matrix, run_restore, run_scan, EXIT_INVALID_ARGS,
+};
 use sentinel_cli::telemetry::{self, TelemetryConfig};
 
 #[tokio::main]
@@ -35,6 +37,7 @@ async fn main() {
         Commands::CostMatrix(args) => run_cost_matrix(args).await,
         Commands::Scan(args) => run_scan(args).await,
         Commands::Bundle(args) => run_bundle(args).await,
+        Commands::Restore(args) => run_restore(args).await,
     };
 
     // Flush buffered spans/metrics before exiting, since `process::exit`
