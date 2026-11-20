@@ -10,6 +10,12 @@ use clap::{Args, Parser, Subcommand};
     long_about = "Soroban Sentinel provides operator-grade storage TTL monitoring, expiry-risk classification, and automated maintenance detection for smart contracts on the Stellar network."
 )]
 pub struct Cli {
+    /// OTLP collector endpoint for traces and metrics (e.g. "http://localhost:4317").
+    ///
+    /// Falls back to the OTEL_EXPORTER_OTLP_ENDPOINT environment variable.
+    #[arg(long = "otlp-endpoint", global = true, value_name = "URL")]
+    pub otlp_endpoint: Option<String>,
+
     #[command(subcommand)]
     pub command: Commands,
 }
@@ -24,6 +30,9 @@ pub enum Commands {
 
     /// Export JSON Schema for IDE autocompletion (VS Code / IntelliJ)
     Schema(SchemaArgs),
+
+    /// Compare the cost of extending contract storage TTL across duration tiers
+    CostMatrix(CostMatrixArgs),
 
     /// Bundle contract and persistent-key TTL extensions into simulated transactions
     Bundle(BundleArgs),
@@ -47,9 +56,13 @@ pub struct ScanArgs {
     #[arg(long, default_value = "testnet", value_name = "NETWORK")]
     pub network: String,
 
-    /// Output format for scan results: "text" (colorized ASCII table), "json" (machine-readable), or "sarif" (GitHub Code Scanning)
+    /// Output format for scan results: "text" (colorized ASCII table), "json" (machine-readable), "csv" (flat tabular export), or "sarif" (GitHub Code Scanning)
     #[arg(long, default_value = "text", value_name = "FORMAT")]
     pub format: String,
+
+    /// Write report output to a file instead of stdout (existing files are overwritten)
+    #[arg(long, value_name = "PATH")]
+    pub output: Option<String>,
 
     /// Persistent storage key symbol to inspect (can be specified multiple times)
     #[arg(long = "key", value_name = "SYMBOL")]
@@ -106,6 +119,46 @@ pub struct SchemaArgs {
     /// Path to the manifest JSON file to generate JSON Schema from
     #[arg(long = "manifest", value_name = "PATH")]
     pub manifest: String,
+}
+
+/// Command-line arguments for the cost-matrix command.
+#[derive(Args, Debug)]
+pub struct CostMatrixArgs {
+    #[arg(value_name = "CONTRACT_ID")]
+    pub contract_id: String,
+
+    /// TTL targets in days, separated by commas
+    #[arg(long, value_delimiter = ',', default_value = "30,90,180,365", value_parser = clap::value_parser!(u32).range(1..))]
+    pub tiers: Vec<u32>,
+
+    #[arg(long, default_value = "testnet")]
+    pub network: String,
+
+    #[arg(long, env = "SOROBAN_RPC_URL")]
+    pub rpc_url: Option<String>,
+
+    #[arg(long, default_value = "text", value_parser = ["text", "json"])]
+    pub format: String,
+
+    /// Persistent storage key symbol (repeatable)
+    #[arg(long)]
+    pub key: Vec<String>,
+
+    /// Assumed effective rent fee per KiB in stroops
+    #[arg(long, default_value_t = 1000)]
+    pub rent_rate_per_kib: u64,
+
+    /// Assumed persistent rent divisor
+    #[arg(long, default_value_t = 1215, value_parser = clap::value_parser!(u32).range(1..))]
+    pub persistent_rent_denominator: u32,
+
+    /// Assumed non-rent fee per batched transaction in stroops
+    #[arg(long, default_value_t = 100)]
+    pub transaction_fee: u64,
+
+    /// Assumed network base reserve in stroops
+    #[arg(long, default_value_t = 5_000_000)]
+    pub base_reserve: u64,
 }
 
 /// Command-line arguments for the `sentinel bundle` command.
@@ -174,6 +227,7 @@ mod tests {
             "scan",
             "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
         ]);
+        assert!(args.otlp_endpoint.is_none());
         match args.command {
             Commands::Scan(scan) => {
                 assert_eq!(
@@ -182,6 +236,7 @@ mod tests {
                 );
                 assert_eq!(scan.network, "testnet");
                 assert_eq!(scan.format, "text");
+                assert!(scan.output.is_none());
                 assert_eq!(scan.threshold, 120960);
                 assert!(scan.rpc_url.is_none());
                 assert!(scan.key.is_empty());
@@ -209,6 +264,8 @@ mod tests {
             "mainnet",
             "--format",
             "json",
+            "--output",
+            "report.csv",
             "--threshold",
             "50000",
             "--key",
@@ -230,8 +287,11 @@ mod tests {
             "--baseline",
             "baseline.json",
             "--fail-on-regression",
+            "--otlp-endpoint",
+            "http://localhost:4317",
         ]);
 
+        assert_eq!(args.otlp_endpoint.as_deref(), Some("http://localhost:4317"));
         match args.command {
             Commands::Scan(scan) => {
                 assert_eq!(
@@ -244,6 +304,7 @@ mod tests {
                 );
                 assert_eq!(scan.network, "mainnet");
                 assert_eq!(scan.format, "json");
+                assert_eq!(scan.output.as_deref(), Some("report.csv"));
                 assert_eq!(scan.threshold, 50000);
                 assert_eq!(scan.key, vec!["COUNTER", "ADMIN"]);
                 assert_eq!(scan.key_xdr, vec!["AAAAFA=="]);
