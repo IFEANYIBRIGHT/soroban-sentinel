@@ -33,6 +33,9 @@ pub enum Commands {
     /// Bundle contract and persistent-key TTL extensions into simulated transactions
     Bundle(BundleArgs),
 
+    /// Detect archived persistent keys and assemble CAP-0046 restoration transactions
+    Restore(RestoreArgs),
+
     /// Scan contracts once from a TOML manifest
     Check(CheckArgs),
 }
@@ -99,6 +102,10 @@ pub struct ScanArgs {
     /// Return exit code 2 if any entry regressed in risk status or was removed compared to baseline
     #[arg(long = "fail-on-regression")]
     pub fail_on_regression: bool,
+
+    /// Launch the interactive TUI dashboard (requires the `tui` Cargo feature and a TTY)
+    #[arg(long)]
+    pub tui: bool,
 }
 
 /// Command-line arguments for the `sentinel benchmark-rpc` command.
@@ -201,6 +208,46 @@ pub struct BundleArgs {
     pub rpc_url: Option<String>,
 }
 
+/// Command-line arguments for the `sentinel restore` command.
+#[derive(Args, Debug, Clone)]
+pub struct RestoreArgs {
+    /// Target Soroban smart contract address (C... Strkey format)
+    #[arg(value_name = "CONTRACT_ID")]
+    pub contract_id: String,
+
+    /// Persistent storage key symbol to restore (can be specified multiple times)
+    #[arg(long = "key", value_name = "SYMBOL")]
+    pub key: Vec<String>,
+
+    /// Persistent storage key encoded as base64 ScVal XDR (can be specified multiple times)
+    #[arg(long = "key-xdr", value_name = "BASE64_XDR")]
+    pub key_xdr: Vec<String>,
+
+    /// Persistent storage key encoded as typed expression (can be specified multiple times)
+    #[arg(long = "key-expr", value_name = "EXPR")]
+    pub key_expr: Vec<String>,
+
+    /// Source Stellar account used for the simulated transaction (defaults to a placeholder)
+    #[arg(short = 's', long, value_name = "G...")]
+    pub source_account: Option<String>,
+
+    /// Base transaction fee in stroops (resource fee is added after simulation)
+    #[arg(long, default_value_t = 100, value_name = "STROOPS")]
+    pub base_fee: u32,
+
+    /// Target Stellar network
+    #[arg(long, default_value = "testnet", value_name = "NETWORK")]
+    pub network: String,
+
+    /// Output format: "text" (human readable) or "json" (machine readable)
+    #[arg(long, default_value = "text", value_parser = ["text", "json"], value_name = "FORMAT")]
+    pub format: String,
+
+    /// Custom Soroban RPC endpoint URL
+    #[arg(long, value_name = "URL", env = "SOROBAN_RPC_URL")]
+    pub rpc_url: Option<String>,
+}
+
 /// Command-line arguments for a one-shot manifest check.
 #[derive(Args, Debug)]
 #[command(
@@ -247,6 +294,7 @@ mod tests {
                 assert!(scan.ledger_seconds.is_none());
                 assert!(scan.baseline.is_none());
                 assert!(!scan.fail_on_regression);
+                assert!(!scan.tui);
             }
             _ => panic!("expected scan command"),
         }
@@ -287,6 +335,7 @@ mod tests {
             "--baseline",
             "baseline.json",
             "--fail-on-regression",
+            "--tui",
             "--otlp-endpoint",
             "http://localhost:4317",
         ]);
@@ -314,8 +363,60 @@ mod tests {
                 assert_eq!(scan.ledger_seconds, Some(5.5));
                 assert_eq!(scan.baseline.as_deref(), Some("baseline.json"));
                 assert!(scan.fail_on_regression);
+                assert!(scan.tui);
             }
             _ => panic!("expected scan command"),
+        }
+    }
+
+    #[test]
+    fn test_parse_restore_defaults_and_flags() {
+        let contract = "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM";
+        let defaults = Cli::parse_from(["sentinel", "restore", contract]);
+        match defaults.command {
+            Commands::Restore(restore) => {
+                assert_eq!(restore.contract_id, contract);
+                assert!(restore.key.is_empty());
+                assert!(restore.key_xdr.is_empty());
+                assert!(restore.key_expr.is_empty());
+                assert!(restore.source_account.is_none());
+                assert_eq!(restore.base_fee, 100);
+                assert_eq!(restore.network, "testnet");
+                assert_eq!(restore.format, "text");
+                assert!(restore.rpc_url.is_none());
+            }
+            _ => panic!("expected restore command"),
+        }
+
+        let custom = Cli::parse_from([
+            "sentinel",
+            "restore",
+            contract,
+            "--key",
+            "ADMIN",
+            "--key-xdr",
+            "AAAAFA==",
+            "--key-expr",
+            "sym:Balance",
+            "--source-account",
+            "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+            "--base-fee",
+            "200",
+            "--network",
+            "mainnet",
+            "--format",
+            "json",
+        ]);
+        match custom.command {
+            Commands::Restore(restore) => {
+                assert_eq!(restore.key, vec!["ADMIN"]);
+                assert_eq!(restore.key_xdr, vec!["AAAAFA=="]);
+                assert_eq!(restore.key_expr, vec!["sym:Balance"]);
+                assert_eq!(restore.base_fee, 200);
+                assert_eq!(restore.network, "mainnet");
+                assert_eq!(restore.format, "json");
+            }
+            _ => panic!("expected restore command"),
         }
     }
 }

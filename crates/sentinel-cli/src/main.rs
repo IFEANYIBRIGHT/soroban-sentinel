@@ -4,6 +4,7 @@ use clap::Parser;
 use sentinel_cli::args::{Cli, Commands};
 use sentinel_cli::commands::{
     run_benchmark, run_bundle, run_check, run_cost_matrix, run_scan, EXIT_INVALID_ARGS,
+    run_bundle, run_check, run_cost_matrix, run_restore, run_scan, EXIT_INVALID_ARGS,
 };
 use sentinel_cli::telemetry::{self, TelemetryConfig};
 
@@ -29,6 +30,7 @@ async fn main() {
         Commands::Scan(args) => run_scan(args).await,
         Commands::Benchmark(args) => run_benchmark(args).await,
         Commands::Bundle(args) => run_bundle(args).await,
+        Commands::Restore(args) => run_restore(args).await,
     };
 
     // Flush buffered spans/metrics before exiting, since `process::exit`
