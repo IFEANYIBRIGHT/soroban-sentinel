@@ -25,6 +25,12 @@ pub enum Commands {
     /// Scan a contract and inspect storage entry TTL status and expiry risk
     Scan(Box<ScanArgs>),
 
+    /// Check Soroban RPC connectivity, network identity, and protocol support
+    Doctor(DoctorArgs),
+
+    /// Monitor one contract and notify configured incident providers
+    Watch(Box<WatchArgs>),
+
     /// Lint a manifest file and export JSON Schema for IDE autocompletion
     LintManifest(LintManifestArgs),
 
@@ -37,6 +43,9 @@ pub enum Commands {
     /// Bundle contract and persistent-key TTL extensions into simulated transactions
     Bundle(BundleArgs),
 
+    /// Build, sign, and optionally submit a TTL extension transaction
+    Bump(BumpArgs),
+
     /// Detect archived persistent keys and assemble CAP-0046 restoration transactions
     Restore(RestoreArgs),
 
@@ -45,6 +54,7 @@ pub enum Commands {
 
     /// Audit contract storage placement, entry sizes, and cost-saving opportunities
     AuditKeys(AuditKeysArgs),
+
     /// Generate a systemd or launchd service definition for autonomous watching
     InstallService(InstallServiceArgs),
 
@@ -62,6 +72,37 @@ pub enum Commands {
 
     /// Estimate the fee for extending a contract footprint TTL
     Forecast(ForecastArgs),
+
+    /// Display network state-archival and contract entry limits
+    Network(NetworkArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct DoctorArgs {
+    #[arg(long, value_name = "URL", env = "SOROBAN_RPC_URL")]
+    pub rpc_url: Option<String>,
+    #[arg(long, default_value = "testnet", value_name = "NETWORK")]
+    pub network: String,
+}
+
+// Avoid Debug implementations that print provider credentials.
+#[derive(Args)]
+pub struct WatchArgs {
+    #[command(flatten)]
+    pub scan: ScanArgs,
+    /// Seconds between scans
+    #[arg(long, default_value_t = 60, value_parser = clap::value_parser!(u64).range(1..))]
+    pub interval: u64,
+    #[arg(long, env = "PAGERDUTY_ROUTING_KEY", hide_env_values = true)]
+    pub pagerduty_routing_key: Option<String>,
+    #[arg(long, env = "OPSGENIE_API_KEY", hide_env_values = true)]
+    pub opsgenie_api_key: Option<String>,
+}
+
+impl std::fmt::Debug for WatchArgs {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WatchArgs").finish_non_exhaustive()
+    }
 }
 
 /// Command-line arguments for forecast.
@@ -218,15 +259,15 @@ pub struct ScanArgs {
     #[arg(long, value_name = "LEDGERS")]
     pub critical_threshold: Option<u32>,
 
-    /// Custom RPC request timeout in seconds (1–120, defaults to 10)
+    /// Custom RPC request timeout in seconds (1 to 120, defaults to 10)
     #[arg(long = "rpc-timeout", value_name = "SECS")]
     pub rpc_timeout: Option<u64>,
 
-    /// Maximum RPC retry attempts for transient errors (0–10, defaults to 3)
+    /// Maximum RPC retry attempts for transient errors (0 to 10, defaults to 3)
     #[arg(long = "rpc-max-retries", value_name = "N")]
     pub rpc_max_retries: Option<u32>,
 
-    /// Override ledger close velocity in seconds per ledger (1.0–60.0)
+    /// Override ledger close velocity in seconds per ledger (1.0 to 60.0)
     #[arg(long = "ledger-seconds", value_name = "SECS")]
     pub ledger_seconds: Option<f64>,
 
@@ -259,6 +300,14 @@ pub struct ScanArgs {
     /// Replay an offline .sentinel-snap ledger snapshot instead of querying RPC
     #[arg(long = "snapshot", value_name = "PATH")]
     pub snapshot: Option<String>,
+
+    /// Render actionable TTL extension recommendations.
+    #[arg(long)]
+    pub recommend: bool,
+
+    /// Target maintenance horizon in days used by recommendations.
+    #[arg(long, default_value_t = 30, value_name = "DAYS")]
+    pub target_days: u32,
 }
 
 /// Command-line arguments for the `sentinel lint-manifest` command.
@@ -458,6 +507,61 @@ pub struct AuditKeysArgs {
     /// Maximum RPC retry attempts
     #[arg(long = "rpc-max-retries", value_name = "N")]
     pub rpc_max_retries: Option<u32>,
+}
+
+/// Command-line arguments for the `sentinel bump` command.
+#[derive(Args, Debug, Clone)]
+pub struct BumpArgs {
+    /// Contract address whose selected entries will be extended.
+    #[arg(value_name = "CONTRACT_ID")]
+    pub contract_id: String,
+
+    /// Persistent storage key symbol (repeatable).
+    #[arg(long = "key", value_name = "SYMBOL")]
+    pub key: Vec<String>,
+
+    /// Base64 XDR storage key (repeatable).
+    #[arg(long = "key-xdr", value_name = "BASE64_XDR")]
+    pub key_xdr: Vec<String>,
+
+    /// Ledger TTL extension target.
+    #[arg(long, value_name = "LEDGERS")]
+    pub extend_to: u32,
+
+    #[arg(long, default_value = "testnet")]
+    pub network: String,
+
+    #[arg(long, value_name = "URL", env = "SOROBAN_RPC_URL")]
+    pub rpc_url: Option<String>,
+
+    /// Source Stellar account G... address.
+    #[arg(long, value_name = "G...")]
+    pub source_account: String,
+
+    /// Maximum total fee; required for submission.
+    #[arg(long, value_name = "STROOPS")]
+    pub max_fee: Option<u64>,
+
+    /// Submit the signed transaction instead of dry-run only.
+    #[arg(long)]
+    pub submit: bool,
+
+    /// Network passphrase required when a custom RPC URL is used.
+    #[arg(long, value_name = "PASSPHRASE")]
+    pub network_passphrase: Option<String>,
+}
+
+/// Command-line arguments for `sentinel network`.
+#[derive(Args, Debug, Clone)]
+pub struct NetworkArgs {
+    #[arg(long, default_value = "testnet", value_name = "NETWORK")]
+    pub network: String,
+
+    #[arg(long, value_name = "URL", env = "SOROBAN_RPC_URL")]
+    pub rpc_url: Option<String>,
+
+    #[arg(long, default_value = "text", value_parser = ["text", "json"])]
+    pub format: String,
 }
 
 /// Command-line arguments for `sentinel install-service`.
