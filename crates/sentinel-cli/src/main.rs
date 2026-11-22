@@ -3,9 +3,6 @@
 use clap::Parser;
 use sentinel_cli::args::{Cli, Commands};
 use sentinel_cli::commands;
-use sentinel_cli::commands::{
-    lint_manifest, run_bundle, run_check, run_cost_matrix, run_scan, schema_command,
-};
 use sentinel_cli::telemetry::{self, TelemetryConfig};
 use std::env;
 use std::process::Command;
@@ -59,7 +56,8 @@ async fn main() {
 
     let telemetry = telemetry::init(&TelemetryConfig::resolve(cli.otlp_endpoint.as_deref()));
 
-    let exit_code = match cli.command {        Commands::Check(args) => commands::run_check(args).await,
+    let exit_code = match cli.command {
+        Commands::Check(args) => commands::run_check(args).await,
         Commands::CostMatrix(args) => commands::run_cost_matrix(args).await,
         Commands::Scan(args) => commands::run_scan(*args).await,
         Commands::Bundle(args) => commands::run_bundle(args).await,
