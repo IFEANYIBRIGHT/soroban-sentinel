@@ -2,11 +2,10 @@
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::time::{Duration, Instant};
-use tracing::{debug, info};
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use stellar_xdr::curr::{ReadXdr, SorobanTransactionData};
+use tracing::{debug, info};
 
 use crate::domain::cache::{footprint_cache_key, SimulationCache, SimulationCacheEntry};
 use crate::error::{SentinelError, SentinelResult};
