@@ -2,11 +2,10 @@
 
 use clap::Parser;
 use sentinel_cli::args::{Cli, Commands};
+use sentinel_cli::commands;
 use sentinel_cli::commands::{
     lint_manifest, run_bundle, run_check, run_cost_matrix, run_scan, schema_command,
-    EXIT_INVALID_ARGS,
 };
-use sentinel_cli::commands;
 use sentinel_cli::telemetry::{self, TelemetryConfig};
 
 #[tokio::main]
@@ -36,10 +35,6 @@ async fn main() {
             code
         }
         Commands::Schema(args) => schema_command(&args.manifest),
-        Commands::Check(args) => commands::run_check(args).await,
-        Commands::CostMatrix(args) => commands::run_cost_matrix(args).await,
-        Commands::Scan(args) => commands::run_scan(args).await,
-        Commands::Bundle(args) => commands::run_bundle(args).await,
         Commands::AuditKeys(args) => commands::run_audit_keys(args).await,
         Commands::Restore(args) => commands::run_restore(args).await,
         Commands::InstallService(args) => commands::run_install_service(args),
