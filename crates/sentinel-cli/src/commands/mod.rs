@@ -1,7 +1,5 @@
 //! CLI command execution modules.
 
-pub mod audit_keys;//! CLI command execution modules.
-
 pub mod audit_keys;
 pub mod benchmark_rpc;
 pub mod bump;
@@ -38,21 +36,4 @@ pub use scan::{
     resolve_rpc_url, resolve_threshold_config, run_scan, EXIT_CRITICAL_OR_ARCHIVED,
     EXIT_INVALID_ARGS, EXIT_OK, EXIT_RPC_FAILURE, EXIT_WARN,
 };
-pub use service::run_install_service;
-pub use bundle::run_bundle;
-pub use check::run_check;
-pub use cost_matrix::run_cost_matrix;
-pub use diff::run_diff_reports;
-pub use forecast::run_forecast;
-pub use init::run_init;
-pub use keys::{run_key_decode, run_key_encode};
-pub use network::run_network;
-pub use restore::run_restore;
-
-pub use scan::{
-    resolve_rpc_url, resolve_threshold_config, run_scan, EXIT_CRITICAL_OR_ARCHIVED,
-    EXIT_INVALID_ARGS, EXIT_OK, EXIT_RPC_FAILURE, EXIT_WARN,
-};
-pub mod doctor;
-pub mod watch;
 pub use service::run_install_service;
