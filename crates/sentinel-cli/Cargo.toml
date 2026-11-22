@@ -37,9 +37,12 @@ arrow-schema = { workspace = true, optional = true }
 thiserror.workspace = true
 hdrhistogram = "7.5"
 reqwest.workspace = true
+sha2.workspace = true
 stellar-xdr.workspace = true
 stellar-strkey.workspace = true
 toml = "0.8"
+ed25519-dalek.workspace = true
+zeroize.workspace = true
 ratatui = { version = "0.26", default-features = false, features = ["crossterm"], optional = true }
 crossterm = { version = "0.27", optional = true }
 tracing.workspace = true
