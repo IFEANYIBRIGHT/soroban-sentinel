@@ -1,7 +1,7 @@
 //! CLI command execution modules.
 
-pub mod benchmark_rpc;
 pub mod audit_keys;
+pub mod benchmark_rpc;
 pub mod bundle;
 pub mod check;
 pub mod cost_matrix;
@@ -15,8 +15,8 @@ pub mod service;
 #[cfg(feature = "tui")]
 pub mod tui;
 
-pub use benchmark_rpc::{run_benchmark, EXIT_BENCHMARK_ERROR, EXIT_BENCHMARK_OK};
 pub use audit_keys::run_audit_keys;
+pub use benchmark_rpc::{run_benchmark, EXIT_BENCHMARK_ERROR, EXIT_BENCHMARK_OK};
 pub use bundle::run_bundle;
 pub use check::run_check;
 pub use cost_matrix::run_cost_matrix;
