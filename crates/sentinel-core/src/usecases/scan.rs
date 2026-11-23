@@ -506,7 +506,8 @@ impl<R: LedgerReader> ScanContractUseCase<R> {
                 .find(|e| e.key_xdr_base64 == code_key_xdr);
 
             report_keys.push(code_key_xdr);
-            if let Some(code_entry) = code_entry_opt {    let byte_size = compute_byte_size(&code_entry.entry_xdr_base64);
+            if let Some(code_entry) = code_entry_opt {
+                let byte_size = compute_byte_size(&code_entry.entry_xdr_base64);
                 let live_until = code_entry.live_until_ledger_seq;
                 let remaining_ledgers = calculate_remaining_ledgers(live_until, latest_ledger);
                 let remaining_seconds =
