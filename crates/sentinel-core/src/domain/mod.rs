@@ -3,12 +3,16 @@
 pub mod alias;
 pub mod budget;
 pub mod bundle;
+pub mod burn_rate;
 pub(crate) mod cache;
 pub mod cold_storage;
 pub mod compare;
 pub mod debt;
+pub mod durability_migration;
 pub mod entry;
+pub mod fee_bump;
 pub mod footprint;
+pub mod histogram;
 pub mod key_pattern;
 pub mod network_limits;
 pub mod planner;
@@ -18,11 +22,17 @@ pub mod risk;
 pub(crate) mod scenario;
 pub mod storage_audit;
 pub mod ttl;
+pub mod upgrade;
 pub mod wasm_analysis;
 
 pub use alias::{AliasError, AliasRegistry};
 pub use bundle::{
     plan_bundle_footprints, BundleError, BundleFootprint, MAX_BUNDLE_FOOTPRINT_ENTRIES,
+};
+pub use burn_rate::{
+    calculate_burn_rate, project_exhaustion, validate_sample_window, BurnRate, BurnRateError,
+    BurnRateSource, LedgerCloseSample, ProjectedExhaustion, DEFAULT_SAMPLE_WINDOW_LEDGERS,
+    MAX_SAMPLE_WINDOW_LEDGERS, MIN_SAMPLE_WINDOW_LEDGERS,
 };
 pub use cache::{footprint_cache_key, SimulationCache, SimulationCacheEntry, SimulationCacheKey};
 pub use compare::{
@@ -31,6 +41,9 @@ pub use compare::{
 };
 pub use debt::{RentDebt, RentDebtCalculator};
 pub use entry::{Durability, EntryType, InstanceStorageBreakdown, SacAssetInfo, StorageEntry};
+pub use fee_bump::{
+    recommend_inclusion_fee, FeeBumpError, FeePercentiles, FeeRecommendation, FeeUrgency,
+};
 pub use footprint::{AtRiskFootprint, FootprintAccess, FootprintValidation, FootprintValidator};
 pub use key_pattern::{
     parse_key_pattern, KeyPattern, KeyPatternCandidateInput, KeyPatternToken,
@@ -47,7 +60,8 @@ pub use recommend::{
 };
 pub use restore::{plan_restore_footprint, RestoreError, RestorePlan};
 pub use risk::{
-    evaluate_risk, RiskLevel, ThresholdConfig, DEFAULT_CRITICAL_LEDGERS, DEFAULT_WARNING_LEDGERS,
+    evaluate_risk, evaluate_risk_for_durability, RiskLevel, ThresholdConfig, ThresholdOverride,
+    DEFAULT_CRITICAL_LEDGERS, DEFAULT_WARNING_LEDGERS,
 };
 pub use scenario::{
     evaluate_protocol_scenario, NetworkRentParameters, ProtocolScenarioReport, ScenarioEntry,
@@ -62,4 +76,13 @@ pub use ttl::{
     estimate_remaining_days, estimate_remaining_seconds, estimate_remaining_seconds_with_velocity,
     SECONDS_PER_DAY, TARGET_LEDGER_CLOSE_SECONDS,
 };
+pub use upgrade::{
+    detect_contract_upgrade, format_contract_code_hash, ContractUpgradeBaseline,
+    ContractUpgradeEvent,
+};
 pub use wasm_analysis::{analyze_wasm_sections, WasmAnalysis, WasmSectionSizes};
+
+pub use durability_migration::{
+    DurabilityMigrationAnalysis, MigrationRequest, RentAnalysisError, RentRates,
+};
+pub use histogram::{ExpirationBucket, ExpirationHistogram, HistogramBucket};
